@@ -1,0 +1,33 @@
+BSD #7 Community Assistance Prototype
+
+This version is the Supabase-backed web/PWA app.
+
+To preview locally:
+
+1. Install Python 3.10 or newer:
+   https://www.python.org/downloads/windows/
+
+2. During install, check:
+   Add python.exe to PATH
+
+3. Unzip this folder.
+
+4. Double-click:
+   start-demo.bat
+
+5. Open this address in a browser:
+   http://localhost:8080
+
+Sign-in notes:
+
+- Google sign-in must be configured in Supabase before it works in production.
+- Email/password sign-in uses Supabase Auth, not the old local demo password system.
+- New users start as community members until an admin approves or changes their access.
+
+Admin setup:
+
+An existing Supabase admin must promote the first manager account in the profiles table.
+Use the app's Admin tab after that to approve members and change roles.
+
+Note:
+localhost means the app is running only on the computer where the command was started.

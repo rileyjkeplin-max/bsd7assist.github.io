@@ -1,0 +1,8 @@
+[functions.alert-notifications]
+verify_jwt = true
+
+[functions.remove-member]
+verify_jwt = true
+
+[functions.delete-alert]
+verify_jwt = true
