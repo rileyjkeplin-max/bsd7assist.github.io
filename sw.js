@@ -1,5 +1,5 @@
-const CACHE='bsd7-community-v1.3.6';
-const SHELL=['./','./index.html','./app-v136.js','./supabase-lite.js','./config.js','./update.js','./install.js','./install-ui.css','./manifest.json','./icons/app-192.svg','./icons/app-512.svg','./icons/apple-touch-icon.svg'];
+const CACHE='bsd7-community-v1.3.7';
+const SHELL=['./','./index.html','./app-v137.js','./supabase-lite.js','./config.js','./update.js','./install.js','./install-ui.css','./manifest.json','./icons/app-192.svg','./icons/app-512.svg','./icons/apple-touch-icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('message',e=>{if(e.data==='SKIP_WAITING')self.skipWaiting()});

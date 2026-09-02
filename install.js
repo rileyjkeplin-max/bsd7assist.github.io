@@ -6,7 +6,7 @@ const isAndroid = () => /android/i.test(navigator.userAgent);
 function show(el){ el?.classList.remove('hidden'); }
 function hide(el){ el?.classList.add('hidden'); }
 function dismissedRecently(){
-  try { return Date.now() - Number(localStorage.getItem('bsd7.installDismissedAt') || 0) < 7*24*60*60*1000; }
+  try { return Date.now() - Number(localStorage.getItem('bsd7.installDismissedAt') || 0) < 30*60*1000; }
   catch { return false; }
 }
 function rememberDismiss(){ try { localStorage.setItem('bsd7.installDismissedAt', String(Date.now())); } catch {} }
@@ -21,11 +21,11 @@ function showInstallCard(mode){
   action.classList.remove('hidden');
   if(mode==='native'){
     title.textContent='Install BSD #7 Assist';
-    text.textContent='Add this app to your home screen for a full-screen, app-like experience.';
+    text.textContent='Add this app to your home screen so it opens like an app and can receive notifications.';
     action.textContent='Install app';
   } else if(mode==='ios'){
     title.textContent='Add BSD #7 Assist to Home Screen';
-    text.innerHTML='Tap the <strong>Share</strong> button in your browser, then choose <strong>Add to Home Screen</strong>.';
+    text.innerHTML='For notifications on iPhone, open this page in <strong>Safari</strong>, tap <strong>Share</strong>, then choose <strong>Add to Home Screen</strong>. If an old icon opens Safari, remove that icon and add it again.';
     action.classList.add('hidden');
   } else {
     return;
