@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "BSD #7 Community Assistance",
+  "short_name": "BSD7 Assist",
+  "description": "Belcourt School District #7 Community Assistance alerts and district publishing console.",
+  "lang": "en-US",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#fbf7ec",
+  "theme_color": "#681b34",
+  "categories": ["utilities", "social"],
+  "icons": [
+    { "src": "icons/app-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/app-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/app-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
