@@ -25,7 +25,7 @@ function showInstallCard(mode){
     action.textContent='Install app';
   } else if(mode==='ios'){
     title.textContent='Add BSD #7 Assist to Home Screen';
-    text.innerHTML='For notifications on iPhone, open this page in <strong>Safari</strong>, tap <strong>Share</strong>, then choose <strong>Add to Home Screen</strong>. If an old icon opens Safari, remove that icon and add it again.';
+    text.innerHTML='For iPhone: open this page in <strong>Safari</strong>, tap <strong>Share</strong>, choose <strong>Add to Home Screen</strong>, and keep <strong>Open as Web App</strong> turned on. If an old icon opens Safari, delete that old icon and add it again.';
     action.classList.add('hidden');
   } else {
     return;
