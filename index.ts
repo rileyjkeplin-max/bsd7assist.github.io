@@ -203,11 +203,11 @@ Deno.serve(async request => {
     const { data: existing, error: dispatchReadError } = await admin.from("alert_notification_sends")
       .select("status,delivered,failed").eq("alert_id", alertId).maybeSingle();
     if (dispatchReadError) throw dispatchReadError;
-    if (existing && existing.status !== "failed") {
+    if (action === "send-alert" && existing && existing.status !== "failed") {
       return json({ ok: true, alreadyDispatched: true, delivered: existing.delivered, failed: existing.failed });
     }
     if (existing) {
-      const { error } = await admin.from("alert_notification_sends").update({ status: "sending", updated_at: new Date().toISOString() }).eq("alert_id", alertId).eq("status", "failed");
+      const { error } = await admin.from("alert_notification_sends").update({ status: "sending", updated_at: new Date().toISOString() }).eq("alert_id", alertId);
       if (error) throw error;
     } else {
       const { error } = await admin.from("alert_notification_sends").insert({ alert_id: alertId, status: "sending" });
