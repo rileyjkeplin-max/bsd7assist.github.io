@@ -73,6 +73,45 @@ const cleanEndpoint = (value: unknown) => {
   return endpoint;
 };
 
+const cleanExpoToken = (value: unknown) => {
+  const token = String(value || "").trim();
+  if (!/^ExponentPushToken\[[A-Za-z0-9_-]+\]$/.test(token)) throw new Error("Invalid mobile push token");
+  return token;
+};
+
+async function sendExpoRows(
+  admin: ReturnType<typeof createClient>,
+  rows: Array<{ id: string; token: string; failure_count?: number }>,
+  title: string,
+  body: string,
+  data: Record<string, unknown> = {},
+) {
+  let delivered = 0, failed = 0;
+  for (const row of rows) {
+    try {
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ to: row.token, title, body, data, sound: "default", priority: "high" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      const ticket = Array.isArray(result?.data) ? result.data[0] : result?.data;
+      if (!response.ok || ticket?.status === "error") throw new Error(ticket?.details?.error || ticket?.message || "Mobile push failed");
+      delivered++;
+      await admin.from("mobile_push_tokens").update({
+        failure_count: 0, last_success_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+    } catch (cause) {
+      failed++;
+      const failureCount = Number(row.failure_count || 0) + 1;
+      await admin.from("mobile_push_tokens").update({
+        enabled: failureCount < 3, failure_count: failureCount, updated_at: new Date().toISOString(),
+      }).eq("id", row.id);
+    }
+  }
+  return { delivered, failed };
+}
+
 Deno.serve(async request => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ ok: false, error: "Method not allowed" }, 405);
@@ -83,7 +122,7 @@ Deno.serve(async request => {
     const { user, profile, admin } = await authenticate(request);
     const action = String(input.action || "");
 
-    if (["config", "status", "subscribe", "unsubscribe"].includes(action) && profile.access_status === "revoked") {
+    if (["config", "status", "subscribe", "unsubscribe", "status-expo", "subscribe-expo", "unsubscribe-expo"].includes(action) && profile.access_status === "revoked") {
       return json({ ok: false, error: "This account no longer has notification access" }, 403);
     }
 
@@ -119,6 +158,35 @@ Deno.serve(async request => {
       const { error } = await admin.from("push_subscriptions").update({
         enabled: false, updated_at: new Date().toISOString(),
       }).eq("user_id", user.id).eq("endpoint", endpoint);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
+    if (action === "status-expo") {
+      const token = cleanExpoToken(input.token);
+      const { data, error } = await admin.from("mobile_push_tokens").select("enabled")
+        .eq("user_id", user.id).eq("token", token).maybeSingle();
+      if (error) throw error;
+      return json({ ok: true, enabled: !!data?.enabled });
+    }
+
+    if (action === "subscribe-expo") {
+      const token = cleanExpoToken(input.token);
+      const { error } = await admin.from("mobile_push_tokens").upsert({
+        user_id: user.id, token,
+        platform: String(input.platform || "").slice(0, 30),
+        device_label: String(input.deviceLabel || "Mobile app").slice(0, 80),
+        enabled: true, failure_count: 0, updated_at: new Date().toISOString(),
+      }, { onConflict: "token" });
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
+    if (action === "unsubscribe-expo") {
+      const token = cleanExpoToken(input.token);
+      const { error } = await admin.from("mobile_push_tokens").update({
+        enabled: false, updated_at: new Date().toISOString(),
+      }).eq("user_id", user.id).eq("token", token);
       if (error) throw error;
       return json({ ok: true });
     }
@@ -175,6 +243,14 @@ Deno.serve(async request => {
             }
           }));
         }
+        const { data: mobileRows, error: mobileError } = await admin.from("mobile_push_tokens")
+          .select("id,token,failure_count").eq("user_id", targetId).eq("enabled", true);
+        if (mobileError) throw mobileError;
+        if (mobileRows?.length) {
+          const mobile = await sendExpoRows(admin, mobileRows, transition.title, transition.body, { kind: "access-decision" });
+          delivered += mobile.delivered;
+          failed += mobile.failed;
+        }
       } catch (notificationCause) {
         notificationError = notificationCause instanceof Error ? notificationCause.message : "Decision notification could not be delivered";
         console.error("access-decision-notification", notificationCause);
@@ -220,6 +296,9 @@ Deno.serve(async request => {
     const { data: subscriptions, error: subscriptionsError } = await admin.from("push_subscriptions")
       .select("id,endpoint,p256dh,auth,failure_count").eq("enabled", true);
     if (subscriptionsError) throw subscriptionsError;
+    const { data: mobileRows, error: mobileError } = await admin.from("mobile_push_tokens")
+      .select("id,token,failure_count").eq("enabled", true);
+    if (mobileError) throw mobileError;
     const title = action === "send-all-clear"
       ? "BSD #7 all clear"
       : alert.child_name ? `Community alert: ${alert.child_name}` : (alert.title || "BSD #7 Community Alert");
@@ -242,6 +321,11 @@ Deno.serve(async request => {
           await admin.from("push_subscriptions").update({ enabled: ![404, 410].includes(statusCode) && failureCount < 3, failure_count: failureCount, updated_at: new Date().toISOString() }).eq("id", row.id);
         }
       }));
+    }
+    if (mobileRows?.length) {
+      const mobile = await sendExpoRows(admin, mobileRows, title, body, { kind: action, alertId: alert.id });
+      delivered += mobile.delivered;
+      failed += mobile.failed;
     }
     await admin.from("alert_notification_sends").update({ status: "sent", delivered, failed, sent_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("alert_id", alertId);
     return json({ ok: true, delivered, failed });
