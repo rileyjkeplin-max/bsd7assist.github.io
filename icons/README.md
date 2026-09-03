@@ -1,0 +1,1 @@
+PWA icon assets for BSD #7 Community Assistance. Raster install icons are generated from the maroon/gold BSD #7 Assist mark and referenced by manifest.json and Apple touch metadata.
