@@ -234,6 +234,29 @@ export function createClient(url, key) {
         });
         return readJson(response);
       }
+    },
+    storage: {
+      from(bucket) {
+        return {
+          async upload(path, file, options = {}) {
+            const headers = {
+              apikey: key,
+              Authorization: `Bearer ${client.session()?.access_token || key}`,
+              "Content-Type": options.contentType || file.type || "application/octet-stream"
+            };
+            if (options.upsert) headers["x-upsert"] = "true";
+            const response = await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${path}`, {
+              method: "POST",
+              headers,
+              body: file
+            });
+            return readJson(response);
+          },
+          getPublicUrl(path) {
+            return { data: { publicUrl: `${url}/storage/v1/object/public/${encodeURIComponent(bucket)}/${path}` } };
+          }
+        };
+      }
     }
   };
   return client;
